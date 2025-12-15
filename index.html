@@ -33,7 +33,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             overflow: hidden;
             position: relative;
-            min-height: 600px; /* Ensures height for mobile view */
+            min-height: 600px;
         }
 
         /* View Management */
@@ -62,6 +62,9 @@
             text-align: center;
             transition: opacity 0.2s;
             margin-top: 15px;
+            /* Ensure button is on top of other elements */
+            position: relative;
+            z-index: 10;
         }
         .btn-primary {
             background-color: var(--brand-yellow);
@@ -84,7 +87,7 @@
             border-radius: 8px;
             font-size: 16px;
             background-color: #fff;
-            box-sizing: border-box; /* Fixes padding width issues */
+            box-sizing: border-box;
         }
         
         /* Balance List */
@@ -147,13 +150,11 @@
 
         <div id="view-dashboard" class="view active">
             <h2>Time Off</h2>
-
             <div style="background:#fff; border-radius:12px; margin-bottom:20px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                     <h3>Balance</h3>
                     <span style="font-size:12px; color:#888;">Days Available</span>
                 </div>
-
                 <div class="balance-row">
                     <div><span class="dot" style="background:#4caf50;"></span>Vacation</div>
                     <div><b>4</b> <span style="color:#999; font-size:12px">/ 10</span></div>
@@ -173,13 +174,12 @@
                 No upcoming leaves scheduled
             </div>
 
-            <button class="btn btn-primary" onclick="switchView('view-form')">Book time off</button>
+            <button id="btn-to-form" class="btn btn-primary">Book time off</button>
         </div>
 
 
         <div id="view-form" class="view">
             <h2>Book time off</h2>
-            
             <form id="ptoForm">
                 <div class="form-group">
                     <label class="form-label">Leave type</label>
@@ -189,12 +189,10 @@
                         <option>Unpaid</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Date</label>
                     <input type="date" class="form-control" id="leaveDate">
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Duration</label>
                     <select class="form-control">
@@ -202,7 +200,6 @@
                         <option>Multi-day</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Comment</label>
                     <input type="text" class="form-control" placeholder="e.g. Skiing trip 🎿">
@@ -210,8 +207,9 @@
             </form>
 
             <div style="margin-top:30px;">
-                <button type="button" class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
-                <button type="button" class="btn btn-text" onclick="switchView('view-dashboard')">Cancel</button>
+                <button id="btn-submit" type="button" class="btn btn-primary">Submit Request</button>
+                
+                <button id="btn-cancel" type="button" class="btn btn-text">Cancel</button>
             </div>
         </div>
 
@@ -223,89 +221,114 @@
                 <p style="margin-bottom:30px; line-height:1.6; padding: 0 10px;">
                     Your PTO request has been submitted to your manager.
                 </p>
-                <button class="btn btn-primary" onclick="resetApp()">Done</button>
+                <button id="btn-done" class="btn btn-primary">Done</button>
             </div>
         </div>
 
     </div>
 
     <script>
-        // --- NAVIGATION LOGIC ---
-        function switchView(viewId) {
-            // Hide all views
-            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-            // Show target view
-            document.getElementById(viewId).classList.add('active');
-
-            // If opening form, set today's date
-            if (viewId === 'view-form') {
-                document.getElementById('leaveDate').valueAsDate = new Date();
-            }
-        }
-
-        function resetApp() {
-            document.getElementById('ptoForm').reset();
-            switchView('view-dashboard');
-        }
-
-        // --- SUBMISSION LOGIC ---
-        function submitRequest() {
-            // 1. Show Loading Spinner immediately
-            document.getElementById('loader-overlay').style.display = 'flex';
-
-            // 2. Prepare the API Payload
-            const apiUrl = 'https://app.staffbase.com/api/branch/notifications';
-            const apiToken = 'Basic NjgzNjc4ZDVjYTRjODk3MThhZjQxMDRiOl1TT3swcl8yKkRsMlNbcVpRaXY4RSwwKzdZbSE3KChXcVMsXkpZYlN5cTFuTW9FKUY2UyQkLEoqUy5ZRkRCK30=';
+        document.addEventListener('DOMContentLoaded', function() {
             
-            const payload = {
-                "accessorIds": ["68362d155187c875bbb106d8"],
-                "channels": ["notificationCenter", "push"],
-                "content": {
-                    "en_US": { "text": "PTO Request has been submitted to your manager" },
-                    "de_DE": { "text": "Neue Abwesenheitsanfrage eingereicht" }
-                },
-                "icon": {
-                    "en_US": { "type": "font", "char": "n" },
-                    "de_DE": { "type": "font", "char": "n" }
-                },
-                "image": {
-                    "en_US": { "type": "image", "href": "https://www.ukg.com/themes/custom/ukg_theme/logo.svg", "width": 600, "height": 400 },
-                    "de_DE": { "type": "image", "href": "https://cdn-icons-png.flaticon.com/512/8677/8677730.png", "width": 600, "height": 400 }
-                },
-                "link": "https://community.ukg.com/s/login/"
-            };
+            // --- 1. ELEMENT REFERENCES ---
+            const viewDashboard = document.getElementById('view-dashboard');
+            const viewForm = document.getElementById('view-form');
+            const viewSuccess = document.getElementById('view-success');
+            const loader = document.getElementById('loader-overlay');
+            const dateInput = document.getElementById('leaveDate');
+            const form = document.getElementById('ptoForm');
 
-            // 3. Fire the API Request
-            // Note: We use .then() and .catch() to ensure the UI transition happens 
-            // even if the API fails (common with CORS in testing).
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': apiToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                console.log("API Response:", response.status);
-                // Proceed to success screen regardless of status for demo reliability
-                finishLoading();
-            })
-            .catch(error => {
-                console.error("API Error (or Network Block):", error);
-                // Still proceed to success screen so user sees the flow
-                finishLoading();
+            // --- 2. BUTTON EVENT LISTENERS ---
+            
+            // "Book time off" -> Goes to Form
+            document.getElementById('btn-to-form').addEventListener('click', function() {
+                switchView(viewForm);
+                dateInput.valueAsDate = new Date(); // Set today's date
             });
-        }
 
-        // Helper to delay the success screen slightly for better UX
-        function finishLoading() {
-            setTimeout(() => {
-                document.getElementById('loader-overlay').style.display = 'none';
-                switchView('view-success');
-            }, 1000); // 1 second artificial delay to show spinner
-        }
+            // "Cancel" -> Goes back to Dashboard
+            document.getElementById('btn-cancel').addEventListener('click', function() {
+                switchView(viewDashboard);
+            });
+
+            // "Done" -> Resets app and goes to Dashboard
+            document.getElementById('btn-done').addEventListener('click', function() {
+                form.reset();
+                switchView(viewDashboard);
+            });
+
+            // "Submit Request" -> FIRES API
+            document.getElementById('btn-submit').addEventListener('click', function(e) {
+                // Prevent default just in case
+                e.preventDefault();
+                
+                // Show Loader
+                loader.style.display = 'flex';
+
+                // Prepare Payload
+                const apiUrl = 'https://app.staffbase.com/api/branch/notifications';
+                const apiToken = 'Basic NjgzNjc4ZDVjYTRjODk3MThhZjQxMDRiOl1TT3swcl8yKkRsMlNbcVpRaXY4RSwwKzdZbSE3KChXcVMsXkpZYlN5cTFuTW9FKUY2UyQkLEoqUy5ZRkRCK30=';
+                
+                const payload = {
+                    "accessorIds": ["68362d155187c875bbb106d8"],
+                    "channels": ["notificationCenter", "push"],
+                    "content": {
+                        "en_US": { "text": "PTO Request has been submitted to your manager" },
+                        "de_DE": { "text": "Neue Abwesenheitsanfrage eingereicht" }
+                    },
+                    "icon": {
+                        "en_US": { "type": "font", "char": "n" },
+                        "de_DE": { "type": "font", "char": "n" }
+                    },
+                    "image": {
+                        "en_US": { "type": "image", "href": "https://www.ukg.com/themes/custom/ukg_theme/logo.svg", "width": 600, "height": 400 },
+                        "de_DE": { "type": "image", "href": "https://cdn-icons-png.flaticon.com/512/8677/8677730.png", "width": 600, "height": 400 }
+                    },
+                    "link": "https://community.ukg.com/s/login/"
+                };
+
+                // Fetch Request
+                fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': apiToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    console.log("API Response:", response.status);
+                    // Force success view regardless of status (for demo reliability)
+                    finishSubmission();
+                })
+                .catch(error => {
+                    console.error("API Error or Network Block:", error);
+                    // Force success view even if network fails
+                    finishSubmission();
+                });
+            });
+
+            // --- 3. HELPER FUNCTIONS ---
+
+            function switchView(targetView) {
+                // Hide all views
+                viewDashboard.classList.remove('active');
+                viewForm.classList.remove('active');
+                viewSuccess.classList.remove('active');
+                
+                // Show target
+                targetView.classList.add('active');
+            }
+
+            function finishSubmission() {
+                // Wait 1 second for visual effect, then show success
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    switchView(viewSuccess);
+                }, 1000);
+            }
+
+        });
     </script>
-
 </body>
 </html>
