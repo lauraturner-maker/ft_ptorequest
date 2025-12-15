@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Froedtert ThedaCare PTO</title>
+    <title>Froedtert ThedaCare PTO Plugin</title>
     <style>
-        /* --- BRANDING & CSS --- */
+        /* --- BRANDING & STYLES --- */
         :root {
             --brand-yellow: #fdc628;
             --brand-black: #000000;
-            --gray-bg: #f5f5f5;
-            --white: #ffffff;
-            --success: #2e7d32;
-            --text-main: #333333;
-            --font-stack: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --success-color: #4caf50;
+            --text-color: #333333;
+            --radius: 16px;
         }
 
-        * { box-sizing: border-box; }
-        
         body {
-            font-family: var(--font-stack);
-            background-color: var(--gray-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
             display: flex;
@@ -30,35 +28,40 @@
         #app-container {
             width: 100%;
             max-width: 400px;
-            background: var(--white);
-            border-radius: 20px; /* Rounded corners like mobile screenshot */
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             overflow: hidden;
             position: relative;
-            min-height: 600px;
+            min-height: 600px; /* Ensures height for mobile view */
         }
 
-        /* Views */
-        .view { display: none; padding: 20px; animation: fadeIn 0.3s ease-out; }
+        /* View Management */
+        .view { display: none; padding: 20px; animation: slideIn 0.3s ease-out; }
         .view.active { display: block; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Headers */
-        h2 { margin: 0 0 20px 0; font-size: 22px; color: var(--brand-black); }
-        h3 { font-size: 16px; margin-bottom: 10px; font-weight: 600; }
+        /* Typography */
+        h2 { font-size: 22px; margin: 0 0 20px 0; color: var(--brand-black); }
+        h3 { font-size: 16px; margin: 0 0 5px 0; font-weight: 600; }
+        p { margin: 0; color: #666; font-size: 14px; }
 
         /* Buttons */
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            margin-top: 10px;
-            transition: 0.2s;
+            text-align: center;
+            transition: opacity 0.2s;
+            margin-top: 15px;
         }
         .btn-primary {
             background-color: var(--brand-yellow);
@@ -68,226 +71,241 @@
         .btn-text {
             background: transparent;
             color: #666;
+            margin-top: 5px;
         }
 
-        /* Form Elements */
-        .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; }
+        /* Form Inputs */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
         .form-control {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
-            background: #fff;
+            background-color: #fff;
+            box-sizing: border-box; /* Fixes padding width issues */
         }
-        select.form-control { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
-
-        /* Balance Cards */
-        .balance-item {
+        
+        /* Balance List */
+        .balance-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #eee;
         }
-        .balance-left { display: flex; align-items: center; gap: 10px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        
+        .balance-row:last-child { border-bottom: none; }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* Success Screen */
+        .success-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding-top: 40px;
+            text-align: center;
+        }
+        .success-icon {
+            width: 70px; height: 70px;
+            background: #e8f5e9;
+            color: var(--success-color);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
         /* Loading Overlay */
-        #loader {
+        #loader-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.9);
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 100;
+            z-index: 999;
         }
         .spinner {
-            width: 40px; height: 40px; border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--brand-yellow); border-radius: 50%;
+            width: 40px; height: 40px;
+            border: 4px solid #eee;
+            border-top: 4px solid var(--brand-yellow);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Success View */
-        .success-container {
-            text-align: center;
-            padding-top: 40px;
-        }
-        .check-circle {
-            width: 80px; height: 80px;
-            background: #e8f5e9;
-            color: var(--success);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 40px;
-            margin: 0 auto 20px auto;
-        }
     </style>
 </head>
 <body>
 
-<div id="app-container">
-    
-    <div id="loader"><div class="spinner"></div></div>
-
-    <div id="view-home" class="view active">
-        <h2>Time Off</h2>
+    <div id="app-container">
         
-        <div style="background: #fff; border-radius: 12px; margin-bottom: 20px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <h3>Balance</h3>
-                <span style="font-size:12px; color:#888;">Days Available</span>
+        <div id="loader-overlay">
+            <div class="spinner"></div>
+        </div>
+
+        <div id="view-dashboard" class="view active">
+            <h2>Time Off</h2>
+
+            <div style="background:#fff; border-radius:12px; margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <h3>Balance</h3>
+                    <span style="font-size:12px; color:#888;">Days Available</span>
+                </div>
+
+                <div class="balance-row">
+                    <div><span class="dot" style="background:#4caf50;"></span>Vacation</div>
+                    <div><b>4</b> <span style="color:#999; font-size:12px">/ 10</span></div>
+                </div>
+                <div class="balance-row">
+                    <div><span class="dot" style="background:#ff9800;"></span>Sick leave</div>
+                    <div><b>8</b> <span style="color:#999; font-size:12px">/ 10</span></div>
+                </div>
+                <div class="balance-row">
+                    <div><span class="dot" style="background:#2196f3;"></span>WFH</div>
+                    <div><b>4</b> <span style="color:#999; font-size:12px">/ 5</span></div>
+                </div>
             </div>
 
-            <div class="balance-item">
-                <div class="balance-left"><div class="dot" style="background:#4caf50"></div> Vacation</div>
-                <div><b>4</b> <span style="color:#aaa; font-size:12px">/ 10</span></div>
+            <h3 style="margin-top:20px;">Upcoming time off</h3>
+            <div style="padding:15px; border:1px dashed #ccc; border-radius:8px; color:#888; text-align:center; font-size:13px; margin-top:10px;">
+                No upcoming leaves scheduled
             </div>
-            <div class="balance-item">
-                <div class="balance-left"><div class="dot" style="background:#ff9800"></div> Sick leave</div>
-                <div><b>8</b> <span style="color:#aaa; font-size:12px">/ 10</span></div>
-            </div>
-            <div class="balance-item" style="border:none">
-                <div class="balance-left"><div class="dot" style="background:#2196f3"></div> WFH</div>
-                <div><b>4</b> <span style="color:#aaa; font-size:12px">/ 5</span></div>
+
+            <button class="btn btn-primary" onclick="switchView('view-form')">Book time off</button>
+        </div>
+
+
+        <div id="view-form" class="view">
+            <h2>Book time off</h2>
+            
+            <form id="ptoForm">
+                <div class="form-group">
+                    <label class="form-label">Leave type</label>
+                    <select class="form-control" id="leaveType">
+                        <option>Vacation</option>
+                        <option>Sick Leave</option>
+                        <option>Unpaid</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" id="leaveDate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Duration</label>
+                    <select class="form-control">
+                        <option>One day</option>
+                        <option>Multi-day</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Comment</label>
+                    <input type="text" class="form-control" placeholder="e.g. Skiing trip 🎿">
+                </div>
+            </form>
+
+            <div style="margin-top:30px;">
+                <button type="button" class="btn btn-primary" onclick="submitRequest()">Submit Request</button>
+                <button type="button" class="btn btn-text" onclick="switchView('view-dashboard')">Cancel</button>
             </div>
         </div>
 
-        <button class="btn btn-primary" onclick="showForm()">Book time off</button>
-    </div>
 
-    <div id="view-form" class="view">
-        <h2>Book time off</h2>
-        
-        <form id="requestForm">
-            <div class="form-group">
-                <label class="form-label">Leave type</label>
-                <select class="form-control" id="leaveType">
-                    <option>Vacation</option>
-                    <option>Sick Leave</option>
-                    <option>Unpaid</option>
-                </select>
+        <div id="view-success" class="view">
+            <div class="success-wrapper">
+                <div class="success-icon">✓</div>
+                <h2>Request Submitted</h2>
+                <p style="margin-bottom:30px; line-height:1.6; padding: 0 10px;">
+                    Your PTO request has been submitted to your manager.
+                </p>
+                <button class="btn btn-primary" onclick="resetApp()">Done</button>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Date</label>
-                <input type="date" class="form-control" id="leaveDate" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Duration</label>
-                <select class="form-control">
-                    <option>One day</option>
-                    <option>Half day (Morning)</option>
-                    <option>Half day (Afternoon)</option>
-                    <option>Multiple days</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Comment</label>
-                <input type="text" class="form-control" placeholder="e.g. Long weekend skiing 🎿">
-            </div>
-
-            <div style="margin-top: 30px;">
-                <button type="submit" class="btn btn-primary">Submit Request</button>
-                <button type="button" class="btn btn-text" onclick="showHome()">Cancel</button>
-            </div>
-        </form>
-    </div>
-
-    <div id="view-success" class="view">
-        <div class="success-container">
-            <div class="check-circle">✓</div>
-            <h2>Request Submitted</h2>
-            <p style="color: #666; line-height: 1.5; margin-bottom: 30px;">
-                Your PTO request has been successfully submitted to your manager.
-            </p>
-            <button class="btn btn-primary" onclick="showHome()">Done</button>
         </div>
+
     </div>
 
-</div>
+    <script>
+        // --- NAVIGATION LOGIC ---
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            // Show target view
+            document.getElementById(viewId).classList.add('active');
 
-<script>
-    // Navigation Functions
-    function showForm() {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.getElementById('view-form').classList.add('active');
-        // Set date to today
-        document.getElementById('leaveDate').valueAsDate = new Date();
-    }
+            // If opening form, set today's date
+            if (viewId === 'view-form') {
+                document.getElementById('leaveDate').valueAsDate = new Date();
+            }
+        }
 
-    function showHome() {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.getElementById('view-home').classList.add('active');
-        document.getElementById('requestForm').reset();
-    }
+        function resetApp() {
+            document.getElementById('ptoForm').reset();
+            switchView('view-dashboard');
+        }
 
-    function showSuccess() {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.getElementById('view-success').classList.add('active');
-    }
+        // --- SUBMISSION LOGIC ---
+        function submitRequest() {
+            // 1. Show Loading Spinner immediately
+            document.getElementById('loader-overlay').style.display = 'flex';
 
-    // Handle Form Submit
-    document.getElementById('requestForm').addEventListener('submit', function(e) {
-        e.preventDefault(); // STOP page reload
-        
-        // Show Loader
-        document.getElementById('loader').style.display = 'flex';
+            // 2. Prepare the API Payload
+            const apiUrl = 'https://app.staffbase.com/api/branch/notifications';
+            const apiToken = 'Basic NjgzNjc4ZDVjYTRjODk3MThhZjQxMDRiOl1TT3swcl8yKkRsMlNbcVpRaXY4RSwwKzdZbSE3KChXcVMsXkpZYlN5cTFuTW9FKUY2UyQkLEoqUy5ZRkRCK30=';
+            
+            const payload = {
+                "accessorIds": ["68362d155187c875bbb106d8"],
+                "channels": ["notificationCenter", "push"],
+                "content": {
+                    "en_US": { "text": "PTO Request has been submitted to your manager" },
+                    "de_DE": { "text": "Neue Abwesenheitsanfrage eingereicht" }
+                },
+                "icon": {
+                    "en_US": { "type": "font", "char": "n" },
+                    "de_DE": { "type": "font", "char": "n" }
+                },
+                "image": {
+                    "en_US": { "type": "image", "href": "https://www.ukg.com/themes/custom/ukg_theme/logo.svg", "width": 600, "height": 400 },
+                    "de_DE": { "type": "image", "href": "https://cdn-icons-png.flaticon.com/512/8677/8677730.png", "width": 600, "height": 400 }
+                },
+                "link": "https://community.ukg.com/s/login/"
+            };
 
-        // Prepare API Data
-        const url = 'https://app.staffbase.com/api/branch/notifications';
-        const payload = {
-            "accessorIds": ["68362d155187c875bbb106d8"],
-            "channels": ["notificationCenter", "push"],
-            "content": {
-                "en_US": { "text": "PTO Request has been submitted to your manager" },
-                "de_DE": { "text": "Neue Abwesenheitsanfrage eingereicht" }
-            },
-            "icon": {
-                "en_US": { "type": "font", "char": "n" },
-                "de_DE": { "type": "font", "char": "n" }
-            },
-            "image": {
-                "en_US": { "type": "image", "href": "https://www.ukg.com/themes/custom/ukg_theme/logo.svg", "width": 600, "height": 400 },
-                "de_DE": { "type": "image", "href": "https://cdn-icons-png.flaticon.com/512/8677/8677730.png", "width": 600, "height": 400 }
-            },
-            "link": "https://community.ukg.com/s/login/"
-        };
+            // 3. Fire the API Request
+            // Note: We use .then() and .catch() to ensure the UI transition happens 
+            // even if the API fails (common with CORS in testing).
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': apiToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                console.log("API Response:", response.status);
+                // Proceed to success screen regardless of status for demo reliability
+                finishLoading();
+            })
+            .catch(error => {
+                console.error("API Error (or Network Block):", error);
+                // Still proceed to success screen so user sees the flow
+                finishLoading();
+            });
+        }
 
-        // Execute Fetch
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Basic NjgzNjc4ZDVjYTRjODk3MThhZjQxMDRiOl1TT3swcl8yKkRsMlNbcVpRaXY4RSwwKzdZbSE3KChXcVMsXkpZYlN5cTFuTW9FKUY2UyQkLEoqUy5ZRkRCK30=',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => {
-            console.log('API Response Status:', response.status);
-            // We proceed to success regardless of status for demo purposes 
-            // because browser CORS might block the response reading.
-            finishSubmission(); 
-        })
-        .catch(error => {
-            console.log('API Error (Likely CORS or Network):', error);
-            // Even if network fails (CORS), show success for the user demo
-            finishSubmission();
-        });
-    });
-
-    function finishSubmission() {
-        // Hide loader and show success message after a short delay
-        setTimeout(() => {
-            document.getElementById('loader').style.display = 'none';
-            showSuccess();
-        }, 1000);
-    }
-</script>
+        // Helper to delay the success screen slightly for better UX
+        function finishLoading() {
+            setTimeout(() => {
+                document.getElementById('loader-overlay').style.display = 'none';
+                switchView('view-success');
+            }, 1000); // 1 second artificial delay to show spinner
+        }
+    </script>
 
 </body>
 </html>
