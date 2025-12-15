@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTO Request Plugin</title>
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --brand-color: #fdc628; /* Froedtert ThedaCare Yellow */
+            --brand-text: #000000;  /* Text color on brand background */
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --success-green: #4caf50;
+            --border-radius: 12px;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Main Container */
+        #app-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-color);
+            position: relative;
+        }
+
+        /* Views (Screens) */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        h1, h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+        }
+
+        /* Balance Section */
+        .balance-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .balance-row:last-child { border-bottom: none; }
+        
+        .balance-info { display: flex; align-items: center; gap: 10px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .dot.vacation { background-color: #4caf50; }
+        .dot.sick { background-color: #ff9800; }
+        .dot.wfh { background-color: #2196f3; }
+
+        .balance-label { font-weight: 500; }
+        .balance-stats { text-align: right; font-size: 14px; color: var(--text-secondary); }
+        .balance-stats span { font-weight: 700; color: var(--text-primary); font-size: 16px; }
+
+        /* Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+        .btn-primary {
+            background-color: var(--brand-color);
+            color: var(--brand-text);
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+
+        /* Form Inputs */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #fff;
+            font-family: inherit;
+        }
+        .form-control:focus { outline: 2px solid var(--brand-color); border-color: transparent; }
+
+        /* Success State */
+        .success-content {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .success-icon {
+            font-size: 48px;
+            color: var(--success-green);
+            margin-bottom: 16px;
+        }
+        
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #ddd;
+            border-top-color: var(--brand-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+
+        <div id="view-dashboard" class="view active">
+            <h2>Time Off</h2>
+
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <h3>Balance</h3>
+                    <small style="color:#888">Days Available</small>
+                </div>
+                
+                <div class="balance-row">
+                    <div class="balance-info">
+                        <span class="dot vacation"></span>
+                        <span class="balance-label">Vacation</span>
+                    </div>
+                    <div class="balance-stats">
+                        <span>4</span> / 10
+                    </div>
+                </div>
+
+                <div class="balance-row">
+                    <div class="balance-info">
+                        <span class="dot sick"></span>
+                        <span class="balance-label">Sick leave</span>
+                    </div>
+                    <div class="balance-stats">
+                        <span>8</span> / 10
+                    </div>
+                </div>
+
+                <div class="balance-row">
+                    <div class="balance-info">
+                        <span class="dot wfh"></span>
+                        <span class="balance-label">WFH</span>
+                    </div>
+                    <div class="balance-stats">
+                        <span>4</span> / 5
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:10px; font-size:16px;">Upcoming Time Off</h3>
+                <p style="font-size:14px; color:#888; font-style:italic;">No upcoming leaves scheduled.</p>
+            </div>
+
+            <button class="btn btn-primary" onclick="navigateTo('view-form')">Book Time Off</button>
+        </div>
+
+
+        <div id="view-form" class="view">
+            <h2>Book time off</h2>
+            
+            <form id="pto-form" onsubmit="handleFormSubmit(event)">
+                <div class="card">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Leave type</label>
+                        <select class="form-control" required>
+                            <option value="Vacation">Vacation</option>
+                            <option value="Sick">Sick Leave</option>
+                            <option value="Maternity">Maternity Leave</option>
+                            <option value="Other">Unpaid Leave</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" required id="startDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" required id="endDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Comment</label>
+                        <textarea class="form-control" rows="3" placeholder="e.g. Long weekend skiing 🎿"></textarea>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+                <button type="button" class="btn btn-secondary" onclick="navigateTo('view-dashboard')">Cancel</button>
+            </form>
+        </div>
+
+
+        <div id="view-success" class="view">
+            <div class="success-content">
+                <div class="success-icon">✓</div>
+                <h2 style="margin-bottom: 10px;">Request Sent</h2>
+                <p style="color: #666; margin-bottom: 30px;">
+                    Your PTO request has been submitted to your manager.
+                </p>
+                <button class="btn btn-primary" onclick="resetApp()">Done</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        /* --- JAVASCRIPT LOGIC --- */
+
+        // Navigation Handler
+        function navigateTo(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            // Show target view
+            document.getElementById(viewId).classList.add('active');
+            
+            // Set default date to today if entering form
+            if(viewId === 'view-form') {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('startDate').value = today;
+                document.getElementById('endDate').value = today;
+            }
+        }
+
+        function resetApp() {
+            document.getElementById('pto-form').reset();
+            navigateTo('view-dashboard');
+        }
+
+        // Form Submission & API Call
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            // API Configuration
+            const API_URL = "https://app.staffbase.com/api/branch/notifications";
+            const AUTH_TOKEN = "Basic NjgzNjc4ZDVjYTRjODk3MThhZjQxMDRiOl1TT3swcl8yKkRsMlNbcVpRaXY4RSwwKzdZbSE3KChXcVMsXkpZYlN5cTFuTW9FKUY2UyQkLEoqUy5ZRkRCK30=";
+
+            // Payload structure provided in prompt
+            const payload = {
+                "accessorIds": [
+                    "68362d155187c875bbb106d8"
+                ],
+                "channels": [
+                    "notificationCenter",
+                    "push"
+                ],
+                "content": {
+                    "en_US": {
+                        "text": "PTO Request has been submitted to your manager"
+                    },
+                    "de_DE": {
+                        "text": "Neue Abwesenheitsanfrage eingereicht"
+                    }
+                },
+                "icon": {
+                    "en_US": { "type": "font", "char": "n" },
+                    "de_DE": { "type": "font", "char": "n" }
+                },
+                "image": {
+                    "en_US": {
+                        "type": "image",
+                        "href": "https://www.ukg.com/themes/custom/ukg_theme/logo.svg",
+                        "width": 600,
+                        "height": 400
+                    },
+                    "de_DE": {
+                        "type": "image",
+                        "href": "https://cdn-icons-png.flaticon.com/512/8677/8677730.png",
+                        "width": 600,
+                        "height": 400
+                    }
+                },
+                "link": "https://community.ukg.com/s/login/"
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': AUTH_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                // Check for success (200-299 status)
+                if (response.ok) {
+                    // Success UI
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    navigateTo('view-success');
+                } else {
+                    // Handle API error
+                    console.error('API Error:', response.status, response.statusText);
+                    alert("Simulation Note: The API request failed (likely due to CORS or Auth). \n\nHowever, for this demo, we will proceed to the success screen.");
+                    
+                    // Fallback for demo purposes if API is blocked by CORS in browser test
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    navigateTo('view-success');
+                }
+            } catch (error) {
+                console.error('Network Error:', error);
+                alert("Network error. In a real environment, check CORS settings.");
+                
+                // Fallback for demo purposes
+                document.getElementById('loading-overlay').style.display = 'none';
+                navigateTo('view-success');
+            }
+        }
+    </script>
+</body>
+</html>
